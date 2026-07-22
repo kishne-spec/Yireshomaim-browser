@@ -16,6 +16,7 @@ if (keystorePropertiesFile.exists()) {
 android {
     namespace = "io.github.webviewtemplate"
     compileSdk = 37
+    buildToolsVersion = "37.0.0"
 
     buildFeatures {
         buildConfig = true
