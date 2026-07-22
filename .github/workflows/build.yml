@@ -25,6 +25,10 @@ on:
         description: 'App display name (shown on home screen)'
         required: true
         default: 'My App'
+      app_icon_url:
+        description: 'App icon URL or repository-relative path (optional)'
+        required: false
+        default: ''
       build_type:
         description: 'Build type — release requires KEYSTORE_* secrets for signing'
         required: true
@@ -46,6 +50,9 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
+      - name: Install icon tools
+        run: sudo apt-get update && sudo apt-get install --yes imagemagick libxml2-utils
+
       - name: Cache Gradle
         uses: actions/cache@v6
         with:
@@ -60,7 +67,8 @@ jobs:
           APP_URL: ${{ inputs.app_url }}
           APP_PACKAGE: ${{ inputs.app_package }}
           APP_NAME: ${{ inputs.app_name }}
-        run: printf 'app.url=%s\napp.package=%s\napp.name=%s\n' "$APP_URL" "$APP_PACKAGE" "$APP_NAME" > app.properties
+          APP_ICON_URL: ${{ inputs.app_icon_url }}
+        run: printf 'app.url=%s\napp.package=%s\napp.name=%s\napp.icon_url=%s\napp.icon_fallback=true\n' "$APP_URL" "$APP_PACKAGE" "$APP_NAME" "$APP_ICON_URL" > app.properties
 
       - name: Set up release signing
         if: inputs.build_type == 'release'

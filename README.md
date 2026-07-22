@@ -1,10 +1,10 @@
 # WebView APK Template
 
-A minimal Android WebView shell. Configure three values, build, done.
+A minimal Android WebView shell. Configure the app, build, done.
 
 ## Quick Start
 
-### 1. Set your URL, package, and app name
+### 1. Set your URL, package, app name, and icon
 
 Edit **`app.properties`** in the project root:
 
@@ -12,7 +12,18 @@ Edit **`app.properties`** in the project root:
 app.url=https://your-domain.com/
 app.package=com.yourcompany.yourapp
 app.name=Your App Name
+app.icon_url=https://your-domain.com/icon.png
+# Or use a path relative to the project root:
+# app.icon_url=branding/icon.xml
 ```
+
+`app.icon_url` accepts an HTTP(S) URL, a project-relative local path, or an absolute local path.
+It is optional: local builds use Android's system default app icon when empty, while GitHub Actions
+first tries the website's `/favicon.ico` and continues with the system default icon if it is
+unavailable. Paths supplied to GitHub Actions must point to files committed to the repository.
+PNG, JPEG, WebP, GIF, BMP, ICO, SVG, AVIF, Android Vector Drawable XML, and other formats
+supported by ImageMagick can be used. Vector Drawable XML is used directly without rasterization;
+for animated or multi-resolution image files, the largest frame is selected.
 
 ### 2. Set up signing (for release builds)
 
@@ -30,7 +41,8 @@ your path).
 
 ### 3. Build
 
-**Option A — locally:**
+**Option A — locally** (remote icons require `curl`; raster/SVG icons require ImageMagick, while
+Android Vector Drawable XML requires `xmllint` from `libxml2-utils`):
 
 ```bash
 ./gradlew assembleDebug    # debug APK (no signing required)
@@ -44,7 +56,7 @@ your path).
 
 **Option B — GitHub Actions (no local Android setup needed):**
 
-Go to **Actions → Build APK → Run workflow**, fill in the three fields, pick `debug` or `release`,
+Go to **Actions → Build APK → Run workflow**, fill in the fields, pick `debug` or `release`,
 and click **Run workflow**. The APK appears as a downloadable artifact when the job finishes.
 
 For signed release builds, add these repository secrets first (Settings → Secrets and variables →
@@ -66,10 +78,10 @@ Actions):
 | WebView URL                  | `app.properties` → `app.url`        |
 | App package / application ID | `app.properties` → `app.package`    |
 | App display name             | `app.properties` → `app.name`       |
+| App icon URL                 | `app.properties` → `app.icon_url`   |
 | Signing keystore             | `keystore/` + `keystore.properties` |
 
-> **Nothing in the Kotlin source needs editing** — all three core values are injected at build time
-> via `BuildConfig` and `resValue`.
+> **Nothing in the Kotlin source needs editing** — configuration is applied at build time.
 
 ---
 
@@ -83,6 +95,7 @@ Actions):
 - **Back button:** navigates back in WebView history before exiting
 - **File upload:** supports gallery picker and camera capture
 - **Permissions:** camera and microphone are granted to the WebView on request
+- **App icon:** downloaded and converted into legacy and adaptive launcher resources at build time
 - **Signing:** v1 + v2 + v3 schemes enabled, v4 disabled
 
 ## Signing Notes

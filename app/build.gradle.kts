@@ -1,11 +1,28 @@
+import org.gradle.api.file.DirectoryProperty
+import org.gradle.api.tasks.OutputDirectory
 import java.util.Properties
 
 plugins {
     alias(libs.plugins.android.application)
 }
 
+abstract class GenerateAppIconTask : Exec() {
+    @get:OutputDirectory
+    abstract val outputDirectory: DirectoryProperty
+}
+
 val appProperties = Properties()
 rootProject.file("app.properties").reader(Charsets.UTF_8).use { appProperties.load(it) }
+
+val appIconSource = appProperties.getProperty("app.icon_url", "").trim()
+val appIconIsRemote = appIconSource.startsWith("http://") || appIconSource.startsWith("https://")
+val localAppIconFile = if (appIconSource.isNotEmpty() && !appIconIsRemote) {
+    rootProject.file(appIconSource)
+} else {
+    null
+}
+val appIconFallback = appProperties.getProperty("app.icon_fallback", "false").toBoolean()
+val generatedAppIconRes = layout.buildDirectory.dir("generated/appIcon/res")
 
 val keystoreProperties = Properties()
 val keystorePropertiesFile = rootProject.file("keystore.properties")
@@ -68,6 +85,39 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
+    }
+}
+
+val generateAppIcon = tasks.register<GenerateAppIconTask>("generateAppIcon") {
+    outputDirectory.set(generatedAppIconRes)
+    val arguments = mutableListOf(
+        rootProject.file("scripts/generate-app-icon.sh").absolutePath,
+        "--output",
+        generatedAppIconRes.get().asFile.absolutePath,
+    )
+    if (appIconSource.isNotEmpty()) {
+        arguments += if (appIconIsRemote) {
+            listOf("--url", appIconSource)
+        } else {
+            listOf("--path", localAppIconFile!!.absolutePath)
+        }
+    } else if (appIconFallback) {
+        arguments += listOf("--favicon-from", appProperties.getProperty("app.url"))
+    }
+
+    commandLine(arguments)
+    inputs.file(rootProject.file("scripts/generate-app-icon.sh"))
+    inputs.property("appIconSource", appIconSource)
+    inputs.property("appIconFallback", appIconFallback)
+    inputs.property("appUrl", appProperties.getProperty("app.url"))
+    localAppIconFile?.let { inputs.file(it) }
+}
+
+androidComponents {
+    onVariants(selector().all()) { variant ->
+        variant.sources.res?.addGeneratedSourceDirectory(generateAppIcon) {
+            it.outputDirectory
+        }
     }
 }
 
