@@ -67,7 +67,6 @@ Actions):
 | App package / application ID | `app.properties` → `app.package`    |
 | App display name             | `app.properties` → `app.name`       |
 | Signing keystore             | `keystore/` + `keystore.properties` |
-| Launcher icons               | `app/src/main/res/mipmap-*/`        |
 
 > **Nothing in the Kotlin source needs editing** — all three core values are injected at build time
 > via `BuildConfig` and `resValue`.
